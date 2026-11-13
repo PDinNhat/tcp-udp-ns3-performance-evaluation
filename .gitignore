@@ -1,0 +1,7 @@
+# Output sinh ra khi chạy ns-3 / NetAnim
+*.xml
+*.pcap
+# File khóa tạm của LibreOffice và rác hệ thống
+.~lock.*
+*~
+.DS_Store
