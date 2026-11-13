@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Case Study 2: Long Fat Networks (LFN) - Truyền tệp qua Vệ tinh</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background-color: #f8fafc; color: #1e293b; line-height: 1.6; }
+    .container { max-width: 1200px; margin: auto; }
+    h1 { color: #0f172a; border-bottom: 3px solid #0284c7; padding-bottom: 10px; }
+    .card { background: white; padding: 24px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07); margin-bottom: 25px; }
+    h2 { color: #0369a1; margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px 14px; text-align: left; }
+    th { background-color: #f0f9ff; color: #0369a1; }
+    .badge-tcp { background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .badge-udp { background-color: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+    .chart-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+    .qa-box { background-color: #f0f9ff; border-left: 5px solid #0284c7; padding: 20px; border-radius: 0 8px 8px 0; margin-top: 15px; }
+    .qa-question { font-weight: 700; color: #0369a1; font-size: 1.05rem; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Case Study 2: Mạng "Ống dài và to" (LFN: Băng thông 1 Gbps, RTT 600 ms)</h1>
+    <div class="card">
+      <h2>1. Dữ liệu đo đạc thực nghiệm (results/case2.csv)</h2>
+      <table id="metricsTable">
+        <thead>
+          <tr>
+            <th>Dịch vụ</th><th>Giao thức</th><th>Gói gửi (Tx)</th><th>Gói nhận (Rx)</th><th>Rớt gói (%)</th><th>Thông lượng (Mbps)</th><th>Độ trễ TB (ms)</th><th>Biến động trễ (ms)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-container"><canvas id="throughputChart"></canvas></div>
+      <div class="chart-container"><canvas id="delayChart"></canvas></div>
+      <div class="chart-container"><canvas id="lossChart"></canvas></div>
+      <div class="chart-container"><canvas id="jitterChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>2. Câu hỏi Thảo luận & Đề xuất Giải pháp</h2>
+      <div class="qa-box">
+        <div class="qa-question">📌 Câu hỏi: Nếu dùng giao thức truyền tệp truyền thống (FTP chạy trên TCP), băng thông 1 Gbps có được tận dụng tối đa không? Tại sao thông lượng (Throughput) thực tế lại rất thấp? Đề xuất giải pháp.</div>
+        <p><strong>Trả lời:</strong></p>
+        <ul>
+          <li><strong>Có tận dụng được 1 Gbps không?</strong> $\rightarrow$ <strong>KHÔNG</strong>. TCP chỉ đạt <strong>0.41 Mbps</strong>, lãng phí hơn 99.9% băng thông vệ tinh.</li>
+          <li><strong>Tại sao thông lượng lại rất thấp?</strong>
+            <ul>
+              <li><strong>Dung lượng đường truyền (Bandwidth-Delay Product - BDP) quá lớn (75 MB):</strong> Độ trễ khứ hồi (Round-Trip Time - RTT) lên tới 600 ms khiến gói tin gửi đi và nhận phản hồi rất chậm.</li>
+              <li><strong>Phản ứng sai lầm với nhiễu sóng:</strong> Thuật toán kiểm soát tắc nghẽn (Congestion Control) của TCP Reno cứ thấy mất gói do nhiễu là tưởng nghẽn mạng, nên liên tục <strong>cắt đôi cửa sổ truyền (Congestion Window - cwnd)</strong>, khóa thông lượng ở mức dưới 1 Mbps. Truyền file 50 GB phải mất tới <strong>11.56 ngày đêm</strong>.</li>
+            </ul>
+          </li>
+          <li><strong>Đề xuất giải pháp:</strong>
+            <ol>
+              <li><strong>Giải pháp tầng Ứng dụng (Application Layer):</strong> Dùng giao thức truyền tệp tăng tốc dựa trên UDP (như <em>Aspera FASP, UDT</em>) kết hợp gửi lại chọn lọc ở tầng ứng dụng, giúp đẩy tốc độ lên <strong>603.90 Mbps</strong> và rút ngắn thời gian gửi 50 GB xuống chỉ còn <strong>11.3 phút</strong>.</li>
+              <li><strong>Giải pháp tầng Giao vận (Transport Layer):</strong> Dùng thuật toán <strong>TCP BBR</strong> (của Google) – điều khiển tốc độ gửi bằng cách đo đạc băng thông thực tế và RTT nhỏ nhất thay vì dựa vào việc mất gói tin.</li>
+            </ol>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadData() {
+      const response = await fetch('/results/case2.csv');
+      const data = await response.text();
+      const rows = data.trim().split('\n').slice(1);
+      const labels = [], throughputs = [], delays = [], lossRates = [], jitters = [];
+      const tableBody = document.querySelector('#metricsTable tbody');
+
+      rows.forEach(row => {
+        const cols = row.split(',');
+        if (cols.length < 12) return;
+        labels.push(cols[2].includes('TCP') ? ['Traditional FTP', '(TCP NewReno)'] : ['LFN Optimized', '(UDP Aspera)']);
+        throughputs.push(parseFloat(cols[9]));
+        delays.push(parseFloat(cols[10]));
+        lossRates.push(parseFloat(cols[8]));
+        jitters.push(parseFloat(cols[11]));
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${cols[1]}</strong></td><td><span class="${cols[2].includes('TCP')?'badge-tcp':'badge-udp'}">${cols[2]}</span></td><td>${cols[5]}</td><td>${cols[6]}</td><td>${parseFloat(cols[8]).toFixed(2)}%</td><td>${parseFloat(cols[9]).toFixed(2)}</td><td>${parseFloat(cols[10]).toFixed(2)}</td><td>${parseFloat(cols[11]).toFixed(4)}</td>`;
+        tableBody.appendChild(tr);
+      });
+
+      const opt = { responsive: true, scales: { x: { ticks: { maxRotation: 0, minRotation: 0, font: { weight: 'bold' } } } } };
+      new Chart(document.getElementById('throughputChart'), { type: 'bar', data: { labels, datasets: [{ label: 'Thông lượng - Throughput (Mbps)', data: throughputs, backgroundColor: ['#ef4444', '#0284c7'] }] }, options: opt });
+      new Chart(document.getElementById('delayChart'), { type: 'bar', data: { labels, datasets: [{ label: 'Độ trễ trung bình - Delay (ms)', data: delays, backgroundColor: ['#f97316', '#10b981'] }] }, options: opt });
+      new Chart(document.getElementById('lossChart'), { type: 'bar', data: { labels, datasets: [{ label: 'Tỷ lệ mất gói - Loss (%)', data: lossRates, backgroundColor: ['#8b5cf6', '#eab308'] }] }, options: opt });
+      new Chart(document.getElementById('jitterChart'), { type: 'bar', data: { labels, datasets: [{ label: 'Biến động trễ - Jitter (ms)', data: jitters, backgroundColor: ['#06b6d4', '#64748b'] }] }, options: opt });
+    }
+    loadData();
+  </script>
+</body>
+</html>

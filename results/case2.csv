@@ -1,0 +1,3 @@
+FlowId,Service,Protocol,Source,Destination,TxPackets,RxPackets,LostPackets,LossRate(%),Throughput(Mbps),MeanDelay(ms),MeanJitter(ms)
+1,Traditional FTP,TCP (NewReno),10.2.1.1,10.2.2.2,471,444,27,5.73248,0.40589,600.141,0.0136221
+2,LFN Optimized Transfer,UDP (Aspera/UDT Model),10.2.1.1,10.2.2.2,677083,668492,8591,1.26883,603.905,600.024,1.15879e-05
